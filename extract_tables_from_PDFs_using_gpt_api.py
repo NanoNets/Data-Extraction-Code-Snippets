@@ -1,60 +1,73 @@
 import openai
+import PyPDF2
 
 # Set your OpenAI API key
 openai.api_key = "your_openai_api_key"
 
-def extract_tables_from_text(pdf_text):
+def extract_text_from_pdf(pdf_path):
     """
-    Extracts tables from the provided PDF text using GPT-4.
+    Extracts text from a PDF file using PyPDF2.
     
     Args:
-        pdf_text (str): The text content of the PDF.
+        pdf_path (str): The path to the PDF file.
+    
+    Returns:
+        str: The extracted text content.
+    """
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+    return text
+
+def extract_tables_from_text(text):
+    """
+    Extracts tables from the provided text using GPT-4.
+    
+    Args:
+        text (str): The extracted text content.
     
     Returns:
         str: The extracted tables in text format.
     """
-    # Create a detailed prompt
     prompt = (
         "Please extract all tables from the following text. "
-        "Ensure that the tables are clearly formatted and separated.\n\n"
-        f"{pdf_text}"
+        "Format them as CSV-like structures with columns and rows clearly defined:\n\n"
+        f"{text}"
     )
     
-    # Use the GPT-4 API to process the prompt
     response = openai.Completion.create(
         model="gpt-4",
         prompt=prompt,
-        max_tokens=2000,  # Adjust based on table size
+        max_tokens=2000,
         temperature=0.5
     )
     
     return response.choices[0].text.strip()
 
-def save_tables_to_file(extracted_tables, file_path):
+def display_extracted_tables(extracted_tables):
     """
-    Saves the extracted tables to a file.
+    Displays the extracted tables.
     
     Args:
         extracted_tables (str): The extracted tables in text format.
-        file_path (str): The path to save the tables.
     """
-    with open(file_path, 'w') as file:
-        file.write(extracted_tables)
-    print(f"Tables successfully saved to {file_path}.")
+    print("Extracted Tables:")
+    print(extracted_tables)
 
 def main():
-    # Sample PDF text content
-    pdf_text = """
-    (Paste your extracted PDF text content here)
-    """
-
-    # Extract tables from the PDF text using GPT-4
+    # Path to your PDF file
+    pdf_path = "your_pdf_file.pdf"
+    
+    # Extract text from the PDF
+    pdf_text = extract_text_from_pdf(pdf_path)
+    
+    # Extract tables from the text using GPT-4
     extracted_tables = extract_tables_from_text(pdf_text)
     
-    # Save the extracted tables to a file
-    output_file_path = "extracted_tables.txt"
-    save_tables_to_file(extracted_tables, output_file_path)
+    # Display the extracted tables
+    display_extracted_tables(extracted_tables)
 
 if __name__ == "__main__":
     main()
-
